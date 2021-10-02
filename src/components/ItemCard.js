@@ -7,26 +7,18 @@ export default class ItemCard extends React.Component {
         this.state = {
             text: this.props.item,
             editActive: false,
+            prevIndex: this.props.index,
         }
     }
     handleClick = (event) => {
-        if (event.detail === 1) {
-            this.handleLoadList(event);
-        }
-        else if (event.detail === 2) {
+        if (event.detail === 2) {
             this.handleToggleEdit(event);
         }
     }
-    handleLoadList = (event) => {
-        let listKey = event.target.id;
-        if (listKey.startsWith("Item-card-text-")) {
-            listKey = listKey.substring("Item-card-text-".length);
-        }
-        this.props.loadListCallback(listKey);
-    }
     handleToggleEdit = (event) => {
         this.setState({
-            editActive: !this.state.editActive
+            editActive: !this.state.editActive,
+            text: this.props.item
         });
     }
     handleUpdate = (event) => {
@@ -38,11 +30,20 @@ export default class ItemCard extends React.Component {
         }
     }
     handleBlur = () => {
-        console.log("LOL");
-        this.props.renameItemCallback(this.props.item);
+        let text=this.state.text;
+        this.props.renameItemCallback(this.props.index,text);
         this.handleToggleEdit();
     }
 
+    handlestart = (event) =>{
+        this.props.prevIndexUpdateCallback(this.props.index)
+    }
+    handledraging = (event) =>{
+         event.preventDefault();
+    }
+    handledrop = (event) =>{
+        this.props.handle_DragDrop_Callback(this.props.index)
+    }
     render() {
         const { item,index } = this.props;
 
@@ -60,10 +61,13 @@ export default class ItemCard extends React.Component {
         }
         else {
             return (
-                <div
+                <div draggable="true"
                     id={"Item-" + index}
                     key={index}
                     onClick={this.handleClick}
+                    onDragStart={this.handlestart}
+                    onDragOver={this.handledraging}
+                    onDrop={this.handledrop}
                     className={'top5-item'}>
                     <span
                         id={"Item-card-text-" + index}

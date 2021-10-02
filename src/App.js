@@ -24,7 +24,8 @@ class App extends React.Component {
         // SETUP THE INITIAL STATE
         this.state = {
             currentList : null,
-            sessionData : loadedSessionData
+            sessionData : loadedSessionData,
+            prevIndex:-1
         }
     }
     sortKeyNamePairsByName = (keyNamePairs) => {
@@ -104,7 +105,26 @@ class App extends React.Component {
             this.db.mutationUpdateSessionData(this.state.sessionData);
         });
     }
-    renameItem = (oldName,newName) => {
+    renameItem = (index,NewName) => {
+            let currentList = this.state.currentList;
+            currentList.items[index]=NewName
+            let newKeyNamePairs = [...this.state.sessionData.keyNamePairs];
+
+            this.setState(prevState => ({
+                currentList: prevState.currentList,
+                sessionData: {
+                    nextKey: prevState.sessionData.nextKey,
+                    counter: prevState.sessionData.counter,
+                    keyNamePairs: newKeyNamePairs
+                }
+            }),() => {
+                // AN AFTER EFFECT IS THAT WE NEED TO MAKE SURE
+                // THE TRANSACTION STACK IS CLEARED
+                let list = this.db.queryGetList(currentList.key);
+                list.items[index] = NewName;
+                this.db.mutationUpdateList(list);
+                this.db.mutationUpdateSessionData(this.state.sessionData);
+            })
     }
     // THIS FUNCTION BEGINS THE PROCESS OF LOADING A LIST FOR EDITING
     loadList = (key) => {
@@ -144,6 +164,32 @@ class App extends React.Component {
         let modal = document.getElementById("delete-modal");
         modal.classList.remove("is-visible");
     }
+
+    handle_DragDrop = (NowIndex) =>{
+        this.state.currentList.items.splice(NowIndex, 0, this.state.currentList.items.splice(this.state.prevIndex, 1)[0])
+        let newKeyNamePairs = [...this.state.sessionData.keyNamePairs];
+
+        this.setState(prevState => ({
+            currentList: prevState.currentList,
+            sessionData: {
+                nextKey: prevState.sessionData.nextKey,
+                counter: prevState.sessionData.counter,
+                keyNamePairs: newKeyNamePairs
+                }
+            }),() => {
+                // AN AFTER EFFECT IS THAT WE NEED TO MAKE SURE
+                // THE TRANSACTION STACK IS CLEARED
+                let list = this.db.queryGetList(this.state.currentList.key);
+                list.items.splice(NowIndex, 0, list.items.splice(this.state.prevIndex, 1)[0]);
+                this.db.mutationUpdateList(list);
+                this.db.mutationUpdateSessionData(this.state.sessionData);
+            })
+    }
+    prevIndexUpdate =(NewIndex)=>{
+        this.setState(prevState => ({
+            prevIndex: NewIndex
+            }))
+    }
     render() {
         return (
             <div id="app-root">
@@ -158,10 +204,12 @@ class App extends React.Component {
                     deleteListCallback={this.deleteList}
                     loadListCallback={this.loadList}
                     renameListCallback={this.renameList}
-                    renameItemCallback={this.renameItem}
                 />
                 <Workspace
-                    currentList={this.state.currentList} />
+                    currentList={this.state.currentList} 
+                    renameItemCallback={this.renameItem}
+                    handle_DragDrop_Callback={this.handle_DragDrop}
+                    prevIndexUpdate={this.prevIndexUpdate}/>
                 <Statusbar 
                     currentList={this.state.currentList} />
                 <DeleteModal
