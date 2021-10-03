@@ -39,7 +39,7 @@ export default class ItemCard extends React.Component {
         this.props.prevIndexUpdateCallback(this.props.index)
     }
     handledraging = (event) =>{
-         event.preventDefault();
+        event.preventDefault();
     }
     handledrop = (event) =>{
         this.props.handle_DragDrop_Callback(this.props.index)
