@@ -176,10 +176,12 @@ class App extends React.Component {
         this.state.sessionData.keyNamePairs.map((all,index)=>{
             if(all.key===this.state.listKeyPairMarkedForDeletion.key){
                 NewkeyNamePairs.splice(index,1);
+                if (this.state.currentList!==null && this.state.currentList.key===all.key){
+                    this.closeCurrentList();;
+                }
             }
             return NewkeyNamePairs;
         })
-        this.closeCurrentList();
         this.setState(prevState => ({
             currentList: prevState.currentList,
             sessionData: {
@@ -192,7 +194,6 @@ class App extends React.Component {
             // THE TRANSACTION STACK IS CLEARED
             this.db.mutationUpdateSessionData(this.state.sessionData);
         })
-
         this.hideDeleteListModal();
     }
 
