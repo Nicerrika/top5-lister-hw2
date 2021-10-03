@@ -12,6 +12,11 @@ export default class DBManager {
         return list != null;
     }
 
+    queryRemoveThisList = (ID) =>{
+        console.log(ID);
+        localStorage.removeItem(ID);
+    }
+
     /**
      * This query asks local storage for a list with a particular key,
      * which is then returned by this function.

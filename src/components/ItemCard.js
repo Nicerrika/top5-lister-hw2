@@ -40,9 +40,17 @@ export default class ItemCard extends React.Component {
     }
     handledraging = (event) =>{
         event.preventDefault();
+        document.getElementById("Item-" + this.props.index).style.background="#669966";
+        document.getElementById("Item-card-text-" + this.props.index).style.background="#669966";
     }
     handledrop = (event) =>{
-        this.props.handle_DragDrop_Callback(this.props.index)
+        this.props.handle_DragDrop_Callback(this.props.index);
+        document.getElementById("Item-" + this.props.index).style.background="#e1e4cd";
+        document.getElementById("Item-card-text-" + this.props.index).style.background="#e1e4cd";
+    }
+    DragChangeColor = (event) =>{
+        document.getElementById("Item-" + this.props.index).style.background="#e1e4cd";
+        document.getElementById("Item-card-text-" + this.props.index).style.background="#e1e4cd";
     }
     render() {
         const { item,index } = this.props;
@@ -68,6 +76,7 @@ export default class ItemCard extends React.Component {
                     onDragStart={this.handlestart}
                     onDragOver={this.handledraging}
                     onDrop={this.handledrop}
+                    onDragLeave={this.DragChangeColor}
                     className={'top5-item'}>
                     <span
                         id={"Item-card-text-" + index}

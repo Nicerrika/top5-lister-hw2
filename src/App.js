@@ -25,7 +25,9 @@ class App extends React.Component {
         this.state = {
             currentList : null,
             sessionData : loadedSessionData,
-            prevIndex:-1
+            listKeyPairMarkedForDeletion : null,
+            prevIndex:-1,
+            removeID:null
         }
     }
     sortKeyNamePairsByName = (keyNamePairs) => {
@@ -146,11 +148,14 @@ class App extends React.Component {
             // ANY AFTER EFFECTS?
         });
     }
-    deleteList = () => {
+    deleteList = (DeletionLinkPair) => {
         // SOMEHOW YOU ARE GOING TO HAVE TO FIGURE OUT
         // WHICH LIST IT IS THAT THE USER WANTS TO
         // DELETE AND MAKE THAT CONNECTION SO THAT THE
         // NAME PROPERLY DISPLAYS INSIDE THE MODAL
+        this.setState(prevState =>({
+            listKeyPairMarkedForDeletion : DeletionLinkPair
+        }))
         this.showDeleteListModal();
     }
     // THIS FUNCTION SHOWS THE MODAL FOR PROMPTING THE USER
@@ -163,6 +168,32 @@ class App extends React.Component {
     hideDeleteListModal() {
         let modal = document.getElementById("delete-modal");
         modal.classList.remove("is-visible");
+    }
+
+    RemoveList = () =>{
+        this.db.queryRemoveThisList(this.state.removeID);
+        let NewkeyNamePairs = [...this.state.sessionData.keyNamePairs];
+        this.state.sessionData.keyNamePairs.map((all,index)=>{
+            if(all.key===this.state.listKeyPairMarkedForDeletion.key){
+                NewkeyNamePairs.splice(index,1);
+            }
+            return NewkeyNamePairs;
+        })
+        this.closeCurrentList();
+        this.setState(prevState => ({
+            currentList: prevState.currentList,
+            sessionData: {
+                nextKey: prevState.sessionData.nextKey,
+                counter: prevState.sessionData.counter,
+                keyNamePairs: NewkeyNamePairs
+            }
+        }),() => {
+            // AN AFTER EFFECT IS THAT WE NEED TO MAKE SURE
+            // THE TRANSACTION STACK IS CLEARED
+            this.db.mutationUpdateSessionData(this.state.sessionData);
+        })
+
+        this.hideDeleteListModal();
     }
 
     handle_DragDrop = (NowIndex) =>{
@@ -185,11 +216,19 @@ class App extends React.Component {
                 this.db.mutationUpdateSessionData(this.state.sessionData);
             })
     }
+
     prevIndexUpdate =(NewIndex)=>{
         this.setState(prevState => ({
             prevIndex: NewIndex
             }))
     }
+
+    UpdateRemoveListId =(NewID)=>{
+        this.setState({
+            removeID:NewID
+            })
+    }
+
     render() {
         return (
             <div id="app-root">
@@ -202,6 +241,7 @@ class App extends React.Component {
                     keyNamePairs={this.state.sessionData.keyNamePairs}
                     createNewListCallback={this.createNewList}
                     deleteListCallback={this.deleteList}
+                    RemoveListIdCallback={this.UpdateRemoveListId}
                     loadListCallback={this.loadList}
                     renameListCallback={this.renameList}
                 />
@@ -214,6 +254,8 @@ class App extends React.Component {
                     currentList={this.state.currentList} />
                 <DeleteModal
                     hideDeleteListModalCallback={this.hideDeleteListModal}
+                    listKeyPair={this.state.listKeyPairMarkedForDeletion}
+                    RemoveListCallback={this.RemoveList}
                 />
             </div>
         );
