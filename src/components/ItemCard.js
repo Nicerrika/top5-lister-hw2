@@ -44,7 +44,7 @@ export default class ItemCard extends React.Component {
         document.getElementById("Item-card-text-" + this.props.index).style.background="#669966";
     }
     handledrop = (event) =>{
-        this.props.handle_DragDrop_Callback(this.props.index);
+        this.props.handle_DragDrop_Callback(this.props.prevIndex,this.props.index);
         document.getElementById("Item-" + this.props.index).style.background="#e1e4cd";
         document.getElementById("Item-card-text-" + this.props.index).style.background="#e1e4cd";
     }

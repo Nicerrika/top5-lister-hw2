@@ -3,7 +3,9 @@ import './App.css';
 
 // IMPORT DATA MANAGEMENT AND TRANSACTION STUFF
 import DBManager from './db/DBManager';
-import jsTPS from './components/jsTPS'
+import jsTPS from './components/jsTPS.js';
+import ChangeItem_Transaction from './components/ChangeItem_Transaction.js';
+import MoveItem_Transaction from './components/MoveItem_Transaction.js';
 
 // THESE ARE OUR REACT COMPONENTS
 import DeleteModal from './components/DeleteModal';
@@ -141,6 +143,7 @@ class App extends React.Component {
         }), () => {
             // ANY AFTER EFFECTS?
         });
+        this.tps.clearAllTransactions();
     }
     // THIS FUNCTION BEGINS THE PROCESS OF CLOSING THE CURRENT LIST
     closeCurrentList = () => {
@@ -201,8 +204,8 @@ class App extends React.Component {
         this.hideDeleteListModal();
     }
 
-    handle_DragDrop = (NowIndex) =>{
-        this.state.currentList.items.splice(NowIndex, 0, this.state.currentList.items.splice(this.state.prevIndex, 1)[0])
+    handle_DragDrop = (PreIndex,NowIndex) =>{
+        this.state.currentList.items.splice(NowIndex, 0, this.state.currentList.items.splice(PreIndex, 1)[0])
         let newKeyNamePairs = [...this.state.sessionData.keyNamePairs];
 
         this.setState(prevState => ({
@@ -216,11 +219,10 @@ class App extends React.Component {
                 // AN AFTER EFFECT IS THAT WE NEED TO MAKE SURE
                 // THE TRANSACTION STACK IS CLEARED
                 let list = this.db.queryGetList(this.state.currentList.key);
-                list.items.splice(NowIndex, 0, list.items.splice(this.state.prevIndex, 1)[0]);
+                list.items.splice(NowIndex, 0, list.items.splice(PreIndex, 1)[0]);
                 this.db.mutationUpdateList(list);
                 this.db.mutationUpdateSessionData(this.state.sessionData);
             })
-        this.addNewList_Instack(this.state.currentList.items)
     }
 
     prevIndexUpdate =(NewIndex)=>{
@@ -236,20 +238,44 @@ class App extends React.Component {
     }
 
     //These function below is to do undo and redo
-    addNewList_Instack = (list) =>{
-        const {stack}=this.state
-        const NewStack=[stack,list]
-        console.log(this.state.stack);
-        console.log(NewStack);
-        this.setState(() =>({
-            stack:NewStack
+    UndoItem = () =>{
+        console.log("Undo");
+        if(this.tps.hasTransactionToUndo()){
+            this.tps.undoTransaction();
+        }
+    }
+
+    RedoItem = () =>{
+        console.log("Redo");
+        if(this.tps.hasTransactionToRedo()){
+            this.tps.doTransaction();
+        }
+    }
+
+    AddMoveTransaction=(prev_index,NewIndex)=>{
+        let transaction = new MoveItem_Transaction(this,prev_index,NewIndex);
+        this.tps.addTransaction(transaction);
+    }
+
+    addChangeItemTransaction = (id, newText) => {
+        let oldText = this.state.currentList.items[id];
+        let transaction = new ChangeItem_Transaction(this, id, oldText, newText);
+        this.tps.addTransaction(transaction);
+    }
+
+    DisableControl=()=>{
         
-        }),()=>{
+    }
 
-            console.log(this.state.stack);
+    //disableButton
+    disableButton(id) {
+        let button = document.getElementById(id);
+        button.classList.add("disabled");
+    }
 
-        })
-
+    enableButton(id) {
+        let button = document.getElementById(id);
+        button.classList.remove("disabled");
     }
 
     render() {
@@ -257,7 +283,9 @@ class App extends React.Component {
             <div id="app-root">
                 <Banner 
                     title='Top 5 Lister'
-                    closeCallback={this.closeCurrentList} />
+                    closeCallback={this.closeCurrentList} 
+                    UndoItemCallback={this.UndoItem}
+                    RedoItemCallback={this.RedoItem}/>
                 <Sidebar
                     heading='Your Lists'
                     currentList={this.state.currentList}
@@ -270,8 +298,9 @@ class App extends React.Component {
                 />
                 <Workspace
                     currentList={this.state.currentList} 
-                    renameItemCallback={this.renameItem}
-                    handle_DragDrop_Callback={this.handle_DragDrop}
+                    prevIndex={this.state.prevIndex}
+                    renameItemCallback={this.addChangeItemTransaction}
+                    handle_DragDrop_Callback={this.AddMoveTransaction}
                     prevIndexUpdate={this.prevIndexUpdate}/>
                 <Statusbar 
                     currentList={this.state.currentList} />

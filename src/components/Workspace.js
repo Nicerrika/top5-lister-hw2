@@ -3,7 +3,7 @@ import ItemCard from "./ItemCard";
 
 export default class Workspace extends React.Component {
     render() {
-        const {prevIndexUpdate,currentList,renameItemCallback,handle_DragDrop_Callback} = this.props;
+        const {prevIndexUpdate,currentList,renameItemCallback,handle_DragDrop_Callback,prevIndex} = this.props;
         if(currentList !== null){
             return (
                 <div id="top5-workspace">
@@ -23,6 +23,7 @@ export default class Workspace extends React.Component {
                                     index={index}
                                     currentList={currentList}
                                     renameItemCallback={renameItemCallback}
+                                    prevIndex={prevIndex}
                                     handle_DragDrop_Callback={handle_DragDrop_Callback}
                                     prevIndexUpdateCallback={prevIndexUpdate}
                                 />
