@@ -3,6 +3,7 @@ import './App.css';
 
 // IMPORT DATA MANAGEMENT AND TRANSACTION STUFF
 import DBManager from './db/DBManager';
+import jsTPS from './components/jsTPS'
 
 // THESE ARE OUR REACT COMPONENTS
 import DeleteModal from './components/DeleteModal';
@@ -17,7 +18,8 @@ class App extends React.Component {
 
         // THIS WILL TALK TO LOCAL STORAGE
         this.db = new DBManager();
-
+        this.tps = new jsTPS();
+        
         // GET THE SESSION DATA FROM OUR DATA MANAGER
         let loadedSessionData = this.db.queryGetSessionData();
 
@@ -27,7 +29,8 @@ class App extends React.Component {
             sessionData : loadedSessionData,
             listKeyPairMarkedForDeletion : null,
             prevIndex:-1,
-            removeID:null
+            removeID:null,
+            stack:[]//undo and redo stack
         }
     }
     sortKeyNamePairsByName = (keyNamePairs) => {
@@ -36,6 +39,7 @@ class App extends React.Component {
             return keyPair1.name.localeCompare(keyPair2.name);
         });
     }
+    
     // THIS FUNCTION BEGINS THE PROCESS OF CREATING A NEW LIST
     createNewList = () => {
         // FIRST FIGURE OUT WHAT THE NEW LIST'S KEY AND NAME WILL BE
@@ -216,6 +220,7 @@ class App extends React.Component {
                 this.db.mutationUpdateList(list);
                 this.db.mutationUpdateSessionData(this.state.sessionData);
             })
+        this.addNewList_Instack(this.state.currentList.items)
     }
 
     prevIndexUpdate =(NewIndex)=>{
@@ -228,6 +233,23 @@ class App extends React.Component {
         this.setState({
             removeID:NewID
             })
+    }
+
+    //These function below is to do undo and redo
+    addNewList_Instack = (list) =>{
+        const {stack}=this.state
+        const NewStack=[stack,list]
+        console.log(this.state.stack);
+        console.log(NewStack);
+        this.setState(() =>({
+            stack:NewStack
+        
+        }),()=>{
+
+            console.log(this.state.stack);
+
+        })
+
     }
 
     render() {
