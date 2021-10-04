@@ -218,7 +218,7 @@ input {
   width:95%;
   padding-left:5%;
 }
-.top5-item {
+.top5-item,.Item-card {
   background-color: var(--swatch-complement);
 }
 .top5-item-dragged-to {

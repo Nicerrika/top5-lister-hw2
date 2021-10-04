@@ -15,6 +15,7 @@ export default class ListCard extends React.Component {
         }
         else if (event.detail === 2) {
             this.handleToggleEdit(event);
+            document.getElementById("add-list-button").classList.replace("top5-button","top5-button-disabled");
         }
     }
     handleLoadList = (event) => {

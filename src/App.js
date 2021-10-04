@@ -24,7 +24,6 @@ class App extends React.Component {
         
         // GET THE SESSION DATA FROM OUR DATA MANAGER
         let loadedSessionData = this.db.queryGetSessionData();
-
         // SETUP THE INITIAL STATE
         this.state = {
             currentList : null,
@@ -44,41 +43,45 @@ class App extends React.Component {
     
     // THIS FUNCTION BEGINS THE PROCESS OF CREATING A NEW LIST
     createNewList = () => {
-        // FIRST FIGURE OUT WHAT THE NEW LIST'S KEY AND NAME WILL BE
-        let newKey = this.state.sessionData.nextKey;
-        let newName = "Untitled" + newKey;
+        if (document.getElementById("add-list-button").classList!="top5-button-disabled"){
+            // FIRST FIGURE OUT WHAT THE NEW LIST'S KEY AND NAME WILL BE
+            let newKey = this.state.sessionData.nextKey;
+            let newName = "Untitled" + newKey;
 
-        // MAKE THE NEW LIST
-        let newList = {
-            key: newKey,
-            name: newName,
-            items: ["?", "?", "?", "?", "?"]
-        };
+            // MAKE THE NEW LIST
+            let newList = {
+                key: newKey,
+                name: newName,
+                items: ["?", "?", "?", "?", "?"]
+            };
 
-        // MAKE THE KEY,NAME OBJECT SO WE CAN KEEP IT IN OUR
-        // SESSION DATA SO IT WILL BE IN OUR LIST OF LISTS
-        let newKeyNamePair = { "key": newKey, "name": newName };
-        let updatedPairs = [...this.state.sessionData.keyNamePairs, newKeyNamePair];
-        this.sortKeyNamePairsByName(updatedPairs);
+            // MAKE THE KEY,NAME OBJECT SO WE CAN KEEP IT IN OUR
+            // SESSION DATA SO IT WILL BE IN OUR LIST OF LISTS
+            let newKeyNamePair = { "key": newKey, "name": newName };
+            let updatedPairs = [...this.state.sessionData.keyNamePairs, newKeyNamePair];
+            this.sortKeyNamePairsByName(updatedPairs);
 
-        // CHANGE THE APP STATE SO THAT IT THE CURRENT LIST IS
-        // THIS NEW LIST AND UPDATE THE SESSION DATA SO THAT THE
-        // NEXT LIST CAN BE MADE AS WELL. NOTE, THIS setState WILL
-        // FORCE A CALL TO render, BUT THIS UPDATE IS ASYNCHRONOUS,
-        // SO ANY AFTER EFFECTS THAT NEED TO USE THIS UPDATED STATE
-        // SHOULD BE DONE VIA ITS CALLBACK
-        this.setState(prevState => ({
-            currentList: newList,
-            sessionData: {
-                nextKey: prevState.sessionData.nextKey + 1,
-                counter: prevState.sessionData.counter + 1,
-                keyNamePairs: updatedPairs
-            }
-        }), () => {
-            // PUTTING THIS NEW LIST IN PERMANENT STORAGE
-            // IS AN AFTER EFFECT
-            this.db.mutationCreateList(newList);
-        });
+            // CHANGE THE APP STATE SO THAT IT THE CURRENT LIST IS
+            // THIS NEW LIST AND UPDATE THE SESSION DATA SO THAT THE
+            // NEXT LIST CAN BE MADE AS WELL. NOTE, THIS setState WILL
+            // FORCE A CALL TO render, BUT THIS UPDATE IS ASYNCHRONOUS,
+            // SO ANY AFTER EFFECTS THAT NEED TO USE THIS UPDATED STATE
+            // SHOULD BE DONE VIA ITS CALLBACK
+            this.setState(prevState => ({
+                currentList: newList,
+                sessionData: {
+                    nextKey: prevState.sessionData.nextKey + 1,
+                    counter: prevState.sessionData.counter + 1,
+                    keyNamePairs: updatedPairs
+                }
+            }), () => {
+                // PUTTING THIS NEW LIST IN PERMANENT STORAGE
+                // IS AN AFTER EFFECT
+                this.db.mutationCreateList(newList);
+            });
+            document.getElementById("close-button").classList.replace("top5-button-disabled","top5-button");
+        }
+        document.getElementById("add-list-button").classList.replace("top5-button-disabled","top5-button");
     }
     renameList = (key, newName) => {
         let newKeyNamePairs = [...this.state.sessionData.keyNamePairs];
@@ -144,6 +147,7 @@ class App extends React.Component {
             // ANY AFTER EFFECTS?
         });
         this.tps.clearAllTransactions();
+        document.getElementById("close-button").classList.replace("top5-button-disabled","top5-button");
     }
     // THIS FUNCTION BEGINS THE PROCESS OF CLOSING THE CURRENT LIST
     closeCurrentList = () => {
@@ -154,6 +158,9 @@ class App extends React.Component {
         }), () => {
             // ANY AFTER EFFECTS?
         });
+        this.tps.clearAllTransactions();
+        this.UpdateDisableControl();
+        document.getElementById("close-button").classList.replace("top5-button","top5-button-disabled");
     }
     deleteList = (DeletionLinkPair) => {
         // SOMEHOW YOU ARE GOING TO HAVE TO FIGURE OUT
@@ -164,6 +171,7 @@ class App extends React.Component {
             listKeyPairMarkedForDeletion : DeletionLinkPair
         }))
         this.showDeleteListModal();
+        this.UpdateDisableControl();
     }
     // THIS FUNCTION SHOWS THE MODAL FOR PROMPTING THE USER
     // TO SEE IF THEY REALLY WANT TO DELETE THE LIST
@@ -202,6 +210,7 @@ class App extends React.Component {
             this.db.mutationUpdateSessionData(this.state.sessionData);
         })
         this.hideDeleteListModal();
+        this.UpdateDisableControl();
     }
 
     handle_DragDrop = (PreIndex,NowIndex) =>{
@@ -223,12 +232,13 @@ class App extends React.Component {
                 this.db.mutationUpdateList(list);
                 this.db.mutationUpdateSessionData(this.state.sessionData);
             })
+        document.getElementById("undo-button").classList.replace("top5-button-disabled","top5-button");
     }
 
     prevIndexUpdate =(NewIndex)=>{
-        this.setState(prevState => ({
+        this.setState({
             prevIndex: NewIndex
-            }))
+            })
     }
 
     UpdateRemoveListId =(NewID)=>{
@@ -239,17 +249,17 @@ class App extends React.Component {
 
     //These function below is to do undo and redo
     UndoItem = () =>{
-        console.log("Undo");
         if(this.tps.hasTransactionToUndo()){
             this.tps.undoTransaction();
         }
+        this.UpdateDisableControl()
     }
 
     RedoItem = () =>{
-        console.log("Redo");
         if(this.tps.hasTransactionToRedo()){
             this.tps.doTransaction();
         }
+        this.UpdateDisableControl()
     }
 
     AddMoveTransaction=(prev_index,NewIndex)=>{
@@ -263,19 +273,27 @@ class App extends React.Component {
         this.tps.addTransaction(transaction);
     }
 
-    DisableControl=()=>{
-        
-    }
+    //Disable control
+    UpdateDisableControl=()=>{
+        console.log("redo: "+this.tps.getRedoSize());
+        console.log("undo: "+this.tps.getUndoSize());
+        if(this.tps.hasTransactionToRedo()){
+            console.log("Can redo");
+            document.getElementById("redo-button").classList.replace("top5-button-disabled","top5-button");
+        }
+        else{
+            console.log("Can not redo");
+            document.getElementById("redo-button").classList.replace("top5-button","top5-button-disabled");
+        }
 
-    //disableButton
-    disableButton(id) {
-        let button = document.getElementById(id);
-        button.classList.add("disabled");
-    }
-
-    enableButton(id) {
-        let button = document.getElementById(id);
-        button.classList.remove("disabled");
+        if(this.tps.hasTransactionToUndo()){
+            console.log("Can undo");
+            document.getElementById("undo-button").classList.replace("top5-button-disabled","top5-button");
+        }
+        else{
+            console.log("Can not undo");
+            document.getElementById("undo-button").classList.replace("top5-button","top5-button-disabled");
+        }
     }
 
     render() {
@@ -295,6 +313,7 @@ class App extends React.Component {
                     RemoveListIdCallback={this.UpdateRemoveListId}
                     loadListCallback={this.loadList}
                     renameListCallback={this.renameList}
+                    disableAddCallback={this.disableAddListButton}
                 />
                 <Workspace
                     currentList={this.state.currentList} 
@@ -306,7 +325,6 @@ class App extends React.Component {
                     currentList={this.state.currentList} />
                 <DeleteModal
                     hideDeleteListModalCallback={this.hideDeleteListModal}
-                    listKeyPair={this.state.listKeyPairMarkedForDeletion}
                     RemoveListCallback={this.RemoveList}
                 />
             </div>
